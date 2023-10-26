@@ -2,7 +2,7 @@ from flask import request
 from . import api
 from app import db
 from app.models import Post
-from .auth import basic_auth
+from .auth import basic_auth, token_auth
 
 
 # Endpoint to get token - requires username/password
@@ -49,8 +49,11 @@ def create_post():
     title = data.get('title')
     body = data.get('title')
     image_url = data.get('image_url')
+    # Get the user
+    current_user = token_auth.current_user()
+
     # Create a new Post to add to the database
-    new_post = Post(title=title, body=body, image_url=image_url, user_id=1)
+    new_post = Post(title=title, body=body, image_url=image_url, user_id=current_user.id)
     db.session.add(new_post)
     db.session.commit()
     return new_post.to_dict(), 201
