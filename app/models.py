@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String, nullable=False)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     posts = db.relationship('Post', backref='author')
+    token = db.Column(db.String(32), index=True, unique=True)
     token_expiration = db.Column(db.DateTime)
 
     def __init__(self, **kwargs):
@@ -26,7 +27,7 @@ class User(db.Model, UserMixin):
     
     def check_password(self, password_guess):
         return check_password_hash(self.password, password_guess)
-    
+
     def get_token(self):
         now = datetime.utcnow()
         if self.token and self.token_expiration > now + timedelta(minutes=1):
@@ -35,6 +36,16 @@ class User(db.Model, UserMixin):
         self.token_expiration = now + timedelta(hours=1)
         db.session.commit()
         return self.token
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'firstName': self.first_name,
+            'lastName': self.last_name,
+            'email': self.email,
+            'username': self.username,
+        }
+        
 
 @login.user_loader
 def get_user(user_id):
@@ -54,13 +65,14 @@ class Post(db.Model):
 
     def __repr__(self):
         return f"<Post {self.id}|{self.title}>"
-    
+
     def to_dict(self):
         return {
             'id': self.id,
             'title': self.title,
             'body': self.body,
-            'date_created': self.date_created,
-            'user_id': self.user_id,
-            'image_url': self.image_url
+            'dateCreated': self.date_created,
+            'userId': self.user_id,
+            'imageUrl': self.image_url,
+            'author': self.author.to_dict()
         }
